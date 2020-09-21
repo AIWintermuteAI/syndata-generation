@@ -15,8 +15,6 @@ import signal
 import time
 
 from defaults import *
-sys.path.insert(0, POISSON_BLENDING_DIR)
-from pb import *
 import math
 from pyblur import *
 from collections import namedtuple
@@ -56,7 +54,7 @@ def LinearMotionBlur3C(img):
     lineType = lineTypes[lineTypeIdx]
     lineAngle = randomAngle(lineLength)
     blurred_img = img
-    for i in xrange(3):
+    for i in range(3):
         blurred_img[:,:,i] = PIL2array1C(LinearMotionBlur(img[:,:,i], lineLength, lineAngle, lineType))
     blurred_img = Image.fromarray(blurred_img, 'RGB')
     return blurred_img
@@ -92,10 +90,14 @@ def get_list_of_images(root_dir, N=1):
     Returns:
         list: List of images(with paths) that will be put in the dataset
     '''
-    img_list = glob.glob(os.path.join(root_dir, '*/*.jpg'))
+    img_list = []
+    image_search = lambda ext : glob.glob(root_dir + ext, recursive=True)
+    for ext in ['/**/*.jpg', '/**/*.jpeg', '/**/*.png']: img_list.extend(image_search(ext))
+
     img_list_f = []
-    for i in xrange(N):
+    for i in range(N):
         img_list_f = img_list_f + random.sample(img_list, len(img_list))
+
     return img_list_f
 
 def get_mask_file(img_file):
@@ -109,7 +111,7 @@ def get_mask_file(img_file):
     Returns:
         string: Correpsonding mask file path
     '''
-    mask_file = img_file.replace('.jpg','.pbm')
+    mask_file = os.path.join("data_dir","objects_dir","lego", "masks", os.path.basename(img_file))
     return mask_file
 
 def get_labels(imgs):
@@ -123,7 +125,7 @@ def get_labels(imgs):
     '''
     labels = []
     for img_file in imgs:
-        label = img_file.split('/')[-2]
+        label = img_file.split('/')[-3]
         labels.append(label)
     return labels
 
@@ -148,7 +150,7 @@ def get_annotation_from_mask_file(mask_file, scale=1.0):
         else:
             return -1, -1, -1, -1
     else:
-        print "%s not found. Using empty mask instead."%mask_file
+        print("%s not found. Using empty mask instead."%mask_file)
         return -1, -1, -1, -1
 
 def get_annotation_from_mask(mask):
@@ -179,7 +181,7 @@ def write_imageset_file(exp_dir, img_files, anno_files):
         anno_files(list): List of annotation files corresponding to each image file
     '''
     with open(os.path.join(exp_dir,'train.txt'),'w') as f:
-        for i in xrange(len(img_files)):
+        for i in range(len(img_files)):
             f.write('%s %s\n'%(img_files[i], anno_files[i]))
 
 def write_labels_file(exp_dir, labels):
@@ -210,7 +212,7 @@ def keep_selected_labels(img_files, labels):
         selected_labels = [x.strip() for x in f.readlines()]
     new_img_files = []
     new_labels = []
-    for i in xrange(len(img_files)):
+    for i in range(len(img_files)):
         if labels[i] in selected_labels:
             new_img_files.append(img_files[i])
             new_labels.append(labels[i])
@@ -262,7 +264,7 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
     if 'none' not in img_file:
         return 
     
-    print "Working on %s" % img_file
+    print("Working on %s" % img_file)
     if os.path.exists(anno_file):
         return anno_file
     
@@ -273,7 +275,7 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
         background = Image.open(bg_file)
         background = background.resize((w, h), Image.ANTIALIAS)
         backgrounds = []
-        for i in xrange(len(blending_list)):
+        for i in range(len(blending_list)):
             backgrounds.append(background.copy())
         
         if dontocclude:
@@ -332,7 +334,7 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
                    break
            if dontocclude:
                already_syn.append([x+xmin, x+xmax, y+ymin, y+ymax])
-           for i in xrange(len(blending_list)):
+           for i in range(len(blending_list)):
                if blending_list[i] == 'none' or blending_list[i] == 'motion':
                    backgrounds[i].paste(foreground, (x, y), mask)
                elif blending_list[i] == 'poisson':
@@ -352,6 +354,8 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
                   backgrounds[i].paste(foreground, (x, y), Image.fromarray(cv2.blur(PIL2array1C(mask),(3,3))))
            if idx >= len(objects):
                continue 
+           filename = SubElement(top, 'filename')
+           filename.text = str(os.path.basename(img_file))
            object_root = SubElement(top, 'object')
            object_type = obj[1]
            object_type_entry = SubElement(object_root, 'name')
@@ -371,7 +375,7 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
            continue
         else:
            break
-    for i in xrange(len(blending_list)):
+    for i in range(len(blending_list)):
         if blending_list[i] == 'motion':
             backgrounds[i] = LinearMotionBlur3C(PIL2array3C(backgrounds[i]))
         backgrounds[i].save(img_file.replace('none', blending_list[i]))
@@ -397,10 +401,12 @@ def gen_syn_data(img_files, labels, img_dir, anno_dir, scale_augment, rotation_a
     w = WIDTH
     h = HEIGHT
     background_dir = BACKGROUND_DIR
-    background_files = glob.glob(os.path.join(background_dir, BACKGROUND_GLOB_STRING))
+    background_files = []
+    image_search = lambda ext : glob.glob(background_dir + ext, recursive=True)
+    for ext in ['/**/*.jpg', '/**/*.jpeg', '/**/*.png']: background_files.extend(image_search(ext))
    
-    print "Number of background images : %s"%len(background_files) 
-    img_labels = zip(img_files, labels)
+    print("Number of background images : %s"%len(background_files)) 
+    img_labels = list(zip(img_files, labels))
     random.shuffle(img_labels)
 
     if add_distractors:
@@ -415,7 +421,7 @@ def gen_syn_data(img_files, labels, img_dir, anno_dir, scale_augment, rotation_a
         random.shuffle(distractor_files)
     else:
         distractor_files = []
-    print "List of distractor files collected: %s" % distractor_files
+    print("List of distractor files collected: %s" % distractor_files)
 
     idx = 0
     img_files = []
@@ -425,21 +431,21 @@ def gen_syn_data(img_files, labels, img_dir, anno_dir, scale_augment, rotation_a
         # Get list of objects
         objects = []
         n = min(random.randint(MIN_NO_OF_OBJECTS, MAX_NO_OF_OBJECTS), len(img_labels))
-        for i in xrange(n):
+        for i in range(n):
             objects.append(img_labels.pop())
         # Get list of distractor objects 
         distractor_objects = []
         if add_distractors:
             n = min(random.randint(MIN_NO_OF_DISTRACTOR_OBJECTS, MAX_NO_OF_DISTRACTOR_OBJECTS), len(distractor_files))
-            for i in xrange(n):
+            for i in range(n):
                 distractor_objects.append(random.choice(distractor_files))
-            print "Chosen distractor objects: %s" % distractor_objects
+            print("Chosen distractor objects: %s" % distractor_objects)
 
         idx += 1
         bg_file = random.choice(background_files)
         for blur in BLENDING_LIST:
             img_file = os.path.join(img_dir, '%i_%s.jpg'%(idx,blur))
-            anno_file = os.path.join(anno_dir, '%i.xml'%idx)
+            anno_file = os.path.join(anno_dir, '%i_%s.xml'%(idx,blur))
             params = (objects, distractor_objects, img_file, anno_file, bg_file)
             params_list.append(params)
             img_files.append(img_file)
@@ -450,7 +456,7 @@ def gen_syn_data(img_files, labels, img_dir, anno_dir, scale_augment, rotation_a
     try:
         p.map(partial_func, params_list)
     except KeyboardInterrupt:
-        print "....\nCaught KeyboardInterrupt, terminating workers"
+        print("....\nCaught KeyboardInterrupt, terminating workers")
         p.terminate()
     else:
         p.close()
