@@ -111,7 +111,8 @@ def get_mask_file(img_file):
     Returns:
         string: Correpsonding mask file path
     '''
-    mask_file = os.path.join("data_dir","objects_dir","lego", "masks", os.path.basename(img_file))
+    path = img_file.split("/")
+    mask_file = os.path.join("/".join(path[:-2]), "masks", path[-1].split(".")[0]+".png")
     return mask_file
 
 def get_labels(imgs):

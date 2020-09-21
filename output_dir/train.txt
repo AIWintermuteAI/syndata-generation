@@ -1,0 +1,2 @@
+output_dir/images/1_none.jpg output_dir/annotations/1_none.xml
+output_dir/images/2_none.jpg output_dir/annotations/2_none.xml

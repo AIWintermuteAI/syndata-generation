@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<annotation>
+    <filename>1_none.jpg</filename>
+    <object>
+        <name>lego</name>
+        <bndbox>
+            <xmin>161</xmin>
+            <xmax>229</xmax>
+            <ymin>25</ymin>
+            <ymax>105</ymax>
+        </bndbox>
+        <difficult>0</difficult>
+    </object>
+    <filename>1_none.jpg</filename>
+    <object>
+        <name>lego</name>
+        <bndbox>
+            <xmin>240</xmin>
+            <xmax>277</xmax>
+            <ymin>356</ymin>
+            <ymax>399</ymax>
+        </bndbox>
+        <difficult>0</difficult>
+    </object>
+</annotation>
